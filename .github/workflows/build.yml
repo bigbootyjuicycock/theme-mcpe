@@ -1,0 +1,28 @@
+name: Build MCHome
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Giai nen source
+        run: unzip -o MCHome-source.zip
+      - name: Cai cong cu
+        run: |
+          brew install ldid make dpkg
+          git clone --recursive --depth=1 https://github.com/theos/theos.git "$HOME/theos"
+      - name: Build rootful va rootless
+        working-directory: MCHome
+        run: |
+          export THEOS="$HOME/theos"
+          export PATH="$(brew --prefix make)/libexec/gnubin:$PATH"
+          make clean package FINALPACKAGE=1
+          mkdir -p ../out && mv packages/*.deb ../out/
+          make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
+          mv packages/*.deb ../out/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MCHome-deb
+          path: out/*.deb
+          
